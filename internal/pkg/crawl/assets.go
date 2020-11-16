@@ -124,6 +124,15 @@ func (c *Crawl) extractAssets(base *url.URL, doc *goquery.Document) (assets []ur
 		})
 	}
 
+	if !utils.StringInSlice("source", c.DisabledHTMLTags) {
+		doc.Find("source").Each(func(index int, item *goquery.Selection) {
+			link, exists := item.Attr("src")
+			if exists {
+				rawAssets = append(rawAssets, link)
+			}
+		})
+	}
+
 	// Turn strings into url.URL
 	assets = utils.StringSliceToURLSlice(rawAssets)
 

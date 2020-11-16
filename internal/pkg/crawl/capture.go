@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CorentinB/Zeno/internal/pkg/utils"
@@ -165,6 +166,11 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	defer resp.Body.Close()
 
 	c.logCrawlSuccess(executionStart, resp.StatusCode, item)
+
+	// If the response isn't a text/*, we do not scrape it
+	if strings.Contains(resp.Header.Get("Content-Type"), "text/") == false {
+		return
+	}
 
 	// Store the base URL to turn relative links into absolute links later
 	base, err := url.Parse(resp.Request.URL.String())
