@@ -8,7 +8,6 @@ import (
 
 	"github.com/CorentinB/Zeno/internal/pkg/frontier"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/remeh/sizedwaitgroup"
 	"github.com/sirupsen/logrus"
 )
 
@@ -83,8 +82,6 @@ func (crawl *Crawl) kafkaProducer() {
 }
 
 func (crawl *Crawl) kafkaConsumer() {
-	var kafkaWorkerPool = sizedwaitgroup.New(16)
-
 	kafkaClient, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": strings.Join(crawl.KafkaBrokers[:], ","),
 		"group.id":          crawl.KafkaConsumerGroup,
@@ -103,7 +100,6 @@ func (crawl *Crawl) kafkaConsumer() {
 
 	for {
 		if crawl.Finished.Get() {
-			kafkaWorkerPool.Wait()
 			kafkaClient.Close()
 			break
 		}
@@ -113,72 +109,65 @@ func (crawl *Crawl) kafkaConsumer() {
 			continue
 		}
 
-		kafkaWorkerPool.Add()
-		go func(wg *sizedwaitgroup.SizedWaitGroup) {
-			var newKafkaMessage = new(kafkaMessage)
-			var newItem = new(frontier.Item)
-			var newParentItemHops uint8
+		var newKafkaMessage = new(kafkaMessage)
+		var newItem = new(frontier.Item)
+		var newParentItemHops uint8
 
-			msg, err := kafkaClient.ReadMessage(15)
-			if err != nil {
-				logWarning.WithFields(logrus.Fields{
-					"error": err,
-				}).Debug("Unable to read message from Kafka")
-				time.Sleep(time.Second * 3)
-				wg.Done()
-				return
-			}
+		msg, err := kafkaClient.ReadMessage(15)
+		if err != nil {
+			logWarning.WithFields(logrus.Fields{
+				"error": err,
+			}).Debug("Unable to read message from Kafka")
+			time.Sleep(time.Second * 3)
+			return
+		}
 
-			logInfo.WithFields(logrus.Fields{
-				"value": string(msg.Value),
-				"key":   string(msg.Key),
-			}).Debug("New message received from Kafka")
+		logInfo.WithFields(logrus.Fields{
+			"value": string(msg.Value),
+			"key":   string(msg.Key),
+		}).Debug("New message received from Kafka")
 
-			err = json.Unmarshal(msg.Value, &newKafkaMessage)
-			if err != nil {
-				logWarning.WithFields(logrus.Fields{
-					"topic":     crawl.KafkaFeedTopic,
-					"key":       msg.Key,
-					"value":     msg.Value,
-					"partition": msg.TopicPartition,
-					"error":     err,
-				}).Warning("Unable to unmarshal message from Kafka")
-				wg.Done()
-				return
-			}
+		err = json.Unmarshal(msg.Value, &newKafkaMessage)
+		if err != nil {
+			logWarning.WithFields(logrus.Fields{
+				"topic":     crawl.KafkaFeedTopic,
+				"key":       msg.Key,
+				"value":     msg.Value,
+				"partition": msg.TopicPartition,
+				"error":     err,
+			}).Warning("Unable to unmarshal message from Kafka")
+			return
+		}
 
-			// Parse new URL
-			newURL, err := url.Parse(newKafkaMessage.URL)
+		// Parse new URL
+		newURL, err := url.Parse(newKafkaMessage.URL)
+		if err != nil {
+			logWarning.WithFields(logrus.Fields{
+				"kafka_msg_url": newKafkaMessage.URL,
+				"error":         err,
+			}).Warning("Unable to parse URL from Kafka message")
+			return
+		}
+
+		// If the message specify a parent URL, let's construct a parent item
+		if len(newKafkaMessage.ParentURL) > 0 {
+			newParentURL, err := url.Parse(newKafkaMessage.ParentURL)
 			if err != nil {
 				logWarning.WithFields(logrus.Fields{
 					"kafka_msg_url": newKafkaMessage.URL,
 					"error":         err,
-				}).Warning("Unable to parse URL from Kafka message")
-				wg.Done()
-				return
-			}
-
-			// If the message specify a parent URL, let's construct a parent item
-			if len(newKafkaMessage.ParentURL) > 0 {
-				newParentURL, err := url.Parse(newKafkaMessage.ParentURL)
-				if err != nil {
-					logWarning.WithFields(logrus.Fields{
-						"kafka_msg_url": newKafkaMessage.URL,
-						"error":         err,
-					}).Warning("Unable to parse parent URL from Kafka message")
-				} else {
-					if newKafkaMessage.HopsCount > 0 {
-						newParentItemHops = newKafkaMessage.HopsCount - 1
-					}
-					newParentItem := frontier.NewItem(newParentURL, nil, "seed", newParentItemHops)
-					newItem = frontier.NewItem(newURL, newParentItem, "seed", newKafkaMessage.HopsCount)
-				}
+				}).Warning("Unable to parse parent URL from Kafka message")
 			} else {
-				newItem = frontier.NewItem(newURL, nil, "seed", newKafkaMessage.HopsCount)
+				if newKafkaMessage.HopsCount > 0 {
+					newParentItemHops = newKafkaMessage.HopsCount - 1
+				}
+				newParentItem := frontier.NewItem(newParentURL, nil, "seed", newParentItemHops)
+				newItem = frontier.NewItem(newURL, newParentItem, "seed", newKafkaMessage.HopsCount)
 			}
+		} else {
+			newItem = frontier.NewItem(newURL, nil, "seed", newKafkaMessage.HopsCount)
+		}
 
-			crawl.Frontier.PushChan <- newItem
-			wg.Done()
-		}(&kafkaWorkerPool)
+		crawl.Frontier.PushChan <- newItem
 	}
 }
