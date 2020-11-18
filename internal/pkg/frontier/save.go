@@ -32,7 +32,6 @@ func (f *Frontier) Load() {
 
 	// We create the structure to load the file's content
 	var dump = new(frontierStats)
-	dump.QueuedCount = f.QueueCount.Value()
 	dump.Hosts = make(map[string]*ratecounter.Counter, 0)
 
 	// Decode the content of the file in the structure
@@ -40,16 +39,13 @@ func (f *Frontier) Load() {
 
 	// Copy the loaded data to our actual frontier
 	f.HostPool.Hosts = dump.Hosts
-	f.QueueCount.Incr(dump.QueuedCount)
 
 	logrus.WithFields(logrus.Fields{
-		"queued": f.QueueCount.Value(),
-		"hosts":  len(f.HostPool.Hosts),
-	}).Info("Successfully loaded previous frontier's hosts pool and queued URLs count")
+		"hosts": len(f.HostPool.Hosts),
+	}).Info("Successfully loaded previous frontier's hosts pool")
 }
 
-// Save write the in-memory hosts pool and queued count to file
-// to resume properly the next time the job is loaded
+// Save write the in-memory hosts pool to resume properly the next time the job is loaded
 func (f *Frontier) Save() {
 	// Create a file for IO
 	encodeFile, err := os.OpenFile(path.Join(f.JobPath, "frontier.gob"), os.O_CREATE|os.O_WRONLY, 0644)
@@ -62,7 +58,6 @@ func (f *Frontier) Save() {
 	// it's a copy of the hosts pool and the count
 	// of the queued items
 	var dump = new(frontierStats)
-	dump.QueuedCount = f.QueueCount.Value()
 	dump.Hosts = make(map[string]*ratecounter.Counter, 0)
 
 	f.HostPool.Lock()

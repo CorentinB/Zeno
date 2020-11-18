@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CorentinB/warc"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,8 +28,6 @@ func isRedirection(statusCode int) bool {
 }
 
 func (t *customTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-	var records *warc.RecordBatch
-
 	// Use httptrace to increment the URI/s counter on DNS requests.
 	trace := &httptrace.ClientTrace{
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
@@ -40,35 +37,25 @@ func (t *customTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 
 	req.Header.Set("User-Agent", t.c.UserAgent)
-	req.Header.Set("Accept-Encoding", "*/*")
+	req.Header.Set("Accept", "*/*")
 
 	// Retry on request errors and rate limiting.
 	var sleepTime = time.Millisecond * 250
 	var exponentFactor = 2
 	for i := 0; i <= t.c.MaxRetry; i++ {
 		t.c.URIsPerSecond.Incr(1)
+
+		if i != 0 {
+			resp.Body.Close()
+		}
+
 		resp, err = t.Transport.RoundTrip(req)
 		if err != nil {
 			logWarning.WithFields(logrus.Fields{
 				"url":   req.URL.String(),
 				"error": err,
 			}).Warning("HTTP error")
-			continue
-		}
-
-		// Write response and request to WARC.
-		if t.c.WARC {
-			records, err = warc.RecordsFromHTTPResponse(resp)
-			if err != nil {
-				logWarning.WithFields(logrus.Fields{
-					"url":   req.URL.String(),
-					"error": err,
-				}).Warning("Error turning http.Resp into WARC records")
-				resp.Body.Close()
-				continue
-			}
-			t.c.WARCWriter <- records
-			t.c.Crawled.Incr(1)
+			return resp, err
 		}
 
 		// If the crawl is finishing, we do not want to sleep and retry anymore.
@@ -81,14 +68,13 @@ func (t *customTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 		if string(strconv.Itoa(resp.StatusCode)[0]) != "2" && isRedirection(resp.StatusCode) == false {
 			// If we get a 404, we do not waste any time retrying
 			if resp.StatusCode == 404 {
-				return resp, err
+				return resp, nil
 			}
 
 			// If we get a 429, then we are being rate limited, in this case we
 			// sleep then retry.
 			// TODO: If the response include the "Retry-After" header, we use it to sleep for the appropriate time before retrying.
 			if resp.StatusCode == 429 {
-				resp.Body.Close()
 				sleepTime = sleepTime * time.Duration(exponentFactor)
 				logInfo.WithFields(logrus.Fields{
 					"url":         req.URL.String(),
@@ -102,14 +88,13 @@ func (t *customTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 
 			// If we get any other error, we simply wait for a random time between
 			// 0 and 1s, then retry.
-			resp.Body.Close()
 			rand.Seed(time.Now().UnixNano())
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 			continue
 		}
-		return resp, err
+		return resp, nil
 	}
-	return resp, err
+	return resp, nil
 }
 
 func (crawl *Crawl) initHTTPClient() (err error) {

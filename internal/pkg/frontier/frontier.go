@@ -61,11 +61,12 @@ func (f *Frontier) Init(jobPath string, logInf, logWarn *logrus.Logger, workers 
 	f.PushChan = make(chan *Item, workers)
 
 	// Initialize the queue
-	f.QueueCount = new(ratecounter.Counter)
 	f.Queue, err = newPersistentQueue(jobPath)
 	if err != nil {
 		return err
 	}
+	f.QueueCount = new(ratecounter.Counter)
+	f.QueueCount.Incr(int64(f.Queue.Length()))
 	logrus.Info("Persistent queue initialized")
 
 	// Initialize the seencheck

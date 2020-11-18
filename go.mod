@@ -3,7 +3,7 @@ module github.com/CorentinB/Zeno
 go 1.15
 
 require (
-	github.com/CorentinB/warc v0.4.8
+	github.com/CorentinB/warc v0.5.1
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/beeker1121/goque v2.1.0+incompatible
@@ -30,6 +30,7 @@ require (
 	github.com/philippgille/gokv/leveldb v0.6.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
+	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/tebeka/strftime v0.1.5 // indirect

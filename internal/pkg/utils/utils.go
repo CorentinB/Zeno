@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// SetupLogging setup the logger for the crawl
 func SetupLogging(jobPath string) (logInfo, logWarning *logrus.Logger) {
 	var logsDirectory = path.Join(jobPath, "logs")
 	logInfo = logrus.New()
