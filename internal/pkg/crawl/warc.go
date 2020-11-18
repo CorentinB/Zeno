@@ -1,7 +1,6 @@
 package crawl
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -14,10 +13,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 )
-
-// errNoBody is a sentinel error value used by failureToReadBody so we
-// can detect that the lack of body was intentional.
-var errNoBody = errors.New("sentinel error value")
 
 // dumpResponseToFile is like httputil.DumpResponse but dumps the response directly
 // to a file and return its path
@@ -36,6 +31,7 @@ func (c *Crawl) dumpResponseToFile(resp *http.Response) (string, error) {
 	// Write the response to the file directly
 	err = resp.Write(file)
 	if err != nil {
+		os.Remove(filePath)
 		return "", err
 	}
 
@@ -47,6 +43,7 @@ func (c *Crawl) initWARCWriter() {
 	var err error
 
 	os.MkdirAll(path.Join(c.JobPath, "temp"), os.ModePerm)
+	go c.tempFilesCleaner()
 
 	rotatorSettings.OutputDirectory = path.Join(c.JobPath, "warcs")
 	rotatorSettings.Compression = "GZIP"
@@ -77,19 +74,12 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	responseRecord.Header.Set("WARC-Target-URI", resp.Request.URL.String())
 	responseRecord.Header.Set("Content-Type", "application/http; msgtype=response")
 
-	// If the Content-Length is unknown or if it is higher than 2048 bytes, then
+	// If the Content-Length is unknown or if it is higher than 2MB, then
 	// we process the response directly on disk to not risk maxing-out the RAM.
 	// Else, we use the httputil.DumpResponse function to dump the response.
-	if resp.ContentLength == -1 || resp.ContentLength > 2048 {
+	if resp.ContentLength == -1 || resp.ContentLength > 2097152 {
 		responsePath, err = c.dumpResponseToFile(resp)
 		if err != nil {
-			err := os.Remove(responsePath)
-			if err != nil {
-				logWarning.WithFields(logrus.Fields{
-					"path":  responsePath,
-					"error": err,
-				}).Warning("Error deleting temporary file")
-			}
 			return responsePath, err
 		}
 
@@ -108,15 +98,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Dump request
 	requestDump, err = httputil.DumpRequestOut(resp.Request, true)
 	if err != nil {
-		if responsePath != "" {
-			err := os.Remove(responsePath)
-			if err != nil {
-				logWarning.WithFields(logrus.Fields{
-					"path":  responsePath,
-					"error": err,
-				}).Warning("Error deleting temporary file")
-			}
-		}
+		os.Remove(responsePath)
 		return responsePath, err
 	}
 

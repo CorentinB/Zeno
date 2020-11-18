@@ -1,14 +1,18 @@
 package crawl
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/CorentinB/Zeno/internal/pkg/frontier"
 	"github.com/CorentinB/Zeno/internal/pkg/utils"
+	"github.com/sirupsen/logrus"
 )
 
 var regexOutlinks *regexp.Regexp
@@ -53,4 +57,24 @@ func needBrowser(item *frontier.Item) bool {
 	}
 
 	return false
+}
+
+func (crawl *Crawl) tempFilesCleaner() {
+	for {
+		files, err := ioutil.ReadDir(path.Join(crawl.JobPath, "temp"))
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		for _, file := range files {
+			if strings.HasSuffix(file.Name(), ".done") {
+				err := os.Remove(path.Join(crawl.JobPath, "temp", file.Name()))
+				if err != nil {
+					logrus.Fatal(err)
+				}
+			}
+		}
+
+		time.Sleep(time.Second * 1)
+	}
 }
