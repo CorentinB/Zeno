@@ -67,10 +67,6 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 		req.Header.Set("Referer", newItem.ParentItem.URL.String())
 
 		if respPath != "" {
-			respPath = respPath + ".done"
-			for utils.FileExists(respPath) == false {
-				time.Sleep(time.Millisecond * 500)
-			}
 			deleteTempFile(respPath)
 		}
 
@@ -119,18 +115,7 @@ func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error 
 	// This is an asset, we won't do any extraction on the response so we delete
 	// the temporary file if it exists
 	if respPath != "" {
-		respPath = respPath + ".done"
-		for utils.FileExists(respPath) == false {
-			time.Sleep(time.Millisecond * 500)
-		}
-		err := os.Remove(respPath)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"path":  respPath,
-				"url":   item.URL.String(),
-				"error": err,
-			}).Warning("Error deleting temporary file")
-		}
+		deleteTempFile(respPath)
 	}
 
 	c.logCrawlSuccess(executionStart, resp.StatusCode, item)
@@ -194,10 +179,6 @@ func (c *Crawl) Capture(item *frontier.Item) {
 			"error": err,
 		}).Warning(item.URL.String())
 		if respPath != "" {
-			respPath = respPath + ".done"
-			for utils.FileExists(respPath) == false {
-				time.Sleep(time.Millisecond * 500)
-			}
 			deleteTempFile(respPath)
 		}
 		return
@@ -205,17 +186,6 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	defer resp.Body.Close()
 
 	c.logCrawlSuccess(executionStart, resp.StatusCode, item)
-
-	// If the response is stored in a file, we wait for the WARC writer
-	// to mark it as recorded with a .done at the end, before doing any
-	// processing. This also allow Zeno to safely delete the file knowing
-	// that all the WARC writing is done
-	if respPath != "" {
-		respPath = respPath + ".done"
-		for utils.FileExists(respPath) == false {
-			time.Sleep(time.Millisecond * 500)
-		}
-	}
 
 	// If the response isn't a text/*, we do not scrape it, and we delete the
 	// temporary file if it exists

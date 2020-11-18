@@ -133,7 +133,16 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Append records to the record batch
 	batch.Records = append(batch.Records, responseRecord, requestRecord)
 
-	c.WARCWriter <- batch
+	// If we used a temporary file on disk, we create a "response channel"
+	// that we fit in the batch, so the WARC writer is able to tell us when
+	// the writing is done, so we can delete the temporary file safely
+	if responsePath != "" {
+		batch.Done = make(chan bool)
+		c.WARCWriter <- batch
+		<-batch.Done
+	} else {
+		c.WARCWriter <- batch
+	}
 
 	return responsePath, nil
 }
