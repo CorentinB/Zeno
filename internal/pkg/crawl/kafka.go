@@ -117,9 +117,9 @@ func (crawl *Crawl) kafkaConsumer() {
 		if err != nil {
 			logWarning.WithFields(logrus.Fields{
 				"error": err,
-			}).Debug("Unable to read message from Kafka")
+			}).Warning("Unable to read message from Kafka")
 			time.Sleep(time.Second * 3)
-			return
+			continue
 		}
 
 		logInfo.WithFields(logrus.Fields{
@@ -136,7 +136,7 @@ func (crawl *Crawl) kafkaConsumer() {
 				"partition": msg.TopicPartition,
 				"error":     err,
 			}).Warning("Unable to unmarshal message from Kafka")
-			return
+			continue
 		}
 
 		// Parse new URL
@@ -146,7 +146,7 @@ func (crawl *Crawl) kafkaConsumer() {
 				"kafka_msg_url": newKafkaMessage.URL,
 				"error":         err,
 			}).Warning("Unable to parse URL from Kafka message")
-			return
+			continue
 		}
 
 		// If the message specify a parent URL, let's construct a parent item
