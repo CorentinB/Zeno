@@ -54,9 +54,27 @@ var GlobalFlags = []cli.Flag{
 		Name:        "debug",
 		Destination: &config.App.Flags.Debug,
 	},
+
 	&cli.BoolFlag{
 		Name:        "api",
 		Destination: &config.App.Flags.API,
+	},
+	&cli.StringFlag{
+		Name:        "api-port",
+		Value:       "9443",
+		Usage:       "Port to listen on for the API",
+		Destination: &config.App.Flags.APIPort,
+	},
+	&cli.BoolFlag{
+		Name:        "prometheus",
+		Destination: &config.App.Flags.Prometheus,
+		Usage:       "Export metrics in Prometheus format, using this setting imply --api",
+	},
+	&cli.StringFlag{
+		Name:        "prometheus-prefix",
+		Destination: &config.App.Flags.PrometheusPrefix,
+		Usage:       "String used as a prefix for the exported Prometheus metrics",
+		Value:       "zeno:",
 	},
 
 	&cli.IntFlag{
@@ -86,6 +104,11 @@ var GlobalFlags = []cli.Flag{
 		Value:       false,
 		Usage:       "If turned on, <link> HTML tags with \"alternate\" values for their \"rel\" attribute will be archived",
 		Destination: &config.App.Flags.CaptureAlternatePages,
+	},
+	&cli.StringSliceFlag{
+		Name:        "exclude-host",
+		Usage:       "Exclude a specific host from the crawl, note that it will not exclude the domain if it is encountered as an asset for another web page",
+		Destination: &config.App.Flags.ExcludedHosts,
 	},
 
 	// Proxy flags

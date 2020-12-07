@@ -39,17 +39,18 @@ func (crawl *Crawl) finish() {
 		time.Sleep(time.Second)
 	}
 	close(crawl.Frontier.PullChan)
+
 	crawl.WorkerPool.Wait()
 	logrus.Warning("All workers finished")
 
-	// Once all workers are done, it means nothing more is actively sended to
-	// the PushChan channel, we as for the queue writer to terminate, and when
+	// Once all workers are done, it means nothing more is actively send to
+	// the PushChan channel, we ask for the queue writer to terminate, and when
 	// it's done we close the channel safely.
 	crawl.Frontier.FinishingQueueWriter.Set(true)
+	close(crawl.Frontier.PushChan)
 	for crawl.Frontier.IsQueueWriterActive.Get() != false {
 		time.Sleep(time.Second)
 	}
-	close(crawl.Frontier.PushChan)
 
 	// Closing the WARC writing channel
 	if crawl.WARC {

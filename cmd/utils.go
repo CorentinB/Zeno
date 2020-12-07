@@ -47,6 +47,7 @@ func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 	c.MaxHops = uint8(flags.MaxHops)
 	c.DomainsCrawl = flags.DomainsCrawl
 	c.DisabledHTMLTags = flags.DisabledHTMLTags.Value()
+	c.ExcludedHosts = flags.ExcludedHosts.Value()
 	c.CaptureAlternatePages = flags.CaptureAlternatePages
 
 	// WARC settings
@@ -55,6 +56,17 @@ func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 	c.WARCOperator = flags.WARCOperator
 
 	c.API = flags.API
+	c.APIPort = flags.APIPort
+
+	// If Prometheus is specified, then we make sure
+	// c.API is true
+	c.Prometheus = flags.Prometheus
+	if c.Prometheus == true {
+		c.API = true
+		c.PrometheusMetrics = new(crawl.PrometheusMetrics)
+		c.PrometheusMetrics.Prefix = flags.PrometheusPrefix
+	}
+
 	c.UserAgent = flags.UserAgent
 	c.Headless = flags.Headless
 

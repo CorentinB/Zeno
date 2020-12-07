@@ -38,6 +38,12 @@ func (c *Crawl) queueOutlinks(outlinks []url.URL, item *frontier.Item) {
 	// Send the outlinks to the pool of workers
 	for _, outlink := range outlinks {
 		outlink := outlink
+
+		// If the host of the outlink is in the host exclusion list, we ignore it
+		if utils.StringInSlice(outlink.Host, c.ExcludedHosts) {
+			continue
+		}
+
 		if c.DomainsCrawl && strings.Contains(item.Host, outlink.Host) && item.Hop == 0 {
 			newItem := frontier.NewItem(&outlink, item, "seed", 0)
 			if c.UseKafka && len(c.KafkaOutlinksTopic) > 0 {

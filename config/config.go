@@ -13,6 +13,7 @@ type Flags struct {
 	Debug     bool
 
 	DisabledHTMLTags      cli.StringSlice
+	ExcludedHosts         cli.StringSlice
 	DomainsCrawl          bool
 	CaptureAlternatePages bool
 	MaxRedirect           int
@@ -21,7 +22,10 @@ type Flags struct {
 	Proxy       string
 	BypassProxy cli.StringSlice
 
-	API bool
+	API              bool
+	APIPort          string
+	Prometheus       bool
+	PrometheusPrefix string
 
 	WARC         bool
 	WARCPrefix   string

@@ -9,6 +9,8 @@ import (
 )
 
 func (f *Frontier) writeItemsToQueue() {
+	f.IsQueueWriterActive.Set(true)
+
 	for item := range f.PushChan {
 		item := item
 
@@ -41,16 +43,18 @@ func (f *Frontier) writeItemsToQueue() {
 		logInfo.WithFields(logrus.Fields{
 			"url": item.URL,
 		}).Debug("Item enqueued")
+	}
 
-		if f.FinishingQueueWriter.Get() == true {
-			f.IsQueueWriterActive.Set(false)
-			return
-		}
+	if f.FinishingQueueWriter.Get() == true {
+		f.IsQueueWriterActive.Set(false)
+		return
 	}
 }
 
 func (f *Frontier) readItemsFromQueue() {
 	var mapCopy map[string]*ratecounter.Counter
+
+	f.IsQueueReaderActive.Set(true)
 
 	if f.QueueCount.Value() == 0 {
 		time.Sleep(time.Second)

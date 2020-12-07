@@ -22,7 +22,7 @@ func StringSliceToURLSlice(rawURLs []string) (URLs []url.URL) {
 }
 
 // StringContainsSliceElements if the string contains one of the elements
-// of a slcie
+// of a slice
 func StringContainsSliceElements(target string, slice []string) bool {
 	for _, elem := range slice {
 		if strings.Contains(target, elem) {

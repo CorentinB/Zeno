@@ -40,6 +40,11 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 			resp.Body.Close()
 			return resp, respPath, err
 		}
+
+		if c.Prometheus {
+			c.PrometheusMetrics.DownloadedURI.Inc()
+		}
+
 		c.Crawled.Incr(1)
 	}
 

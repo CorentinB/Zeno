@@ -62,7 +62,7 @@ func (crawl *Crawl) kafkaProducer() {
 		if err != nil {
 			logWarning.WithFields(logrus.Fields{
 				"error": err,
-			}).Warning("Unable to marshal message before sending to KAfka")
+			}).Warning("Unable to marshal message before sending to Kafka")
 		}
 
 		err = p.Produce(&kafka.Message{
@@ -83,8 +83,11 @@ func (crawl *Crawl) kafkaProducer() {
 
 func (crawl *Crawl) kafkaConsumer() {
 	kafkaClient, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": strings.Join(crawl.KafkaBrokers[:], ","),
-		"group.id":          crawl.KafkaConsumerGroup,
+		"bootstrap.servers":        strings.Join(crawl.KafkaBrokers[:], ","),
+		"group.id":                 crawl.KafkaConsumerGroup,
+		"session.timeout.ms":       60000,
+		"max.poll.interval.ms":     60000,
+		"go.events.channel.enable": true,
 	})
 	if err != nil {
 		panic(err)
@@ -105,69 +108,87 @@ func (crawl *Crawl) kafkaConsumer() {
 		}
 
 		if crawl.ActiveWorkers.Value() >= int64(crawl.Workers-(crawl.Workers/10)) {
-			time.Sleep(time.Second * 1)
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
 
-		var newKafkaMessage = new(kafkaMessage)
-		var newItem = new(frontier.Item)
-		var newParentItemHops uint8
-
-		msg, err := kafkaClient.ReadMessage(15)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"error": err,
-			}).Warning("Unable to read message from Kafka")
-			time.Sleep(time.Second * 3)
-			continue
-		}
-
-		logInfo.WithFields(logrus.Fields{
-			"value": string(msg.Value),
-			"key":   string(msg.Key),
-		}).Debug("New message received from Kafka")
-
-		err = json.Unmarshal(msg.Value, &newKafkaMessage)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"topic":     crawl.KafkaFeedTopic,
-				"key":       msg.Key,
-				"value":     msg.Value,
-				"partition": msg.TopicPartition,
-				"error":     err,
-			}).Warning("Unable to unmarshal message from Kafka")
-			continue
-		}
-
-		// Parse new URL
-		newURL, err := url.Parse(newKafkaMessage.URL)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"kafka_msg_url": newKafkaMessage.URL,
-				"error":         err,
-			}).Warning("Unable to parse URL from Kafka message")
-			continue
-		}
-
-		// If the message specify a parent URL, let's construct a parent item
-		if len(newKafkaMessage.ParentURL) > 0 {
-			newParentURL, err := url.Parse(newKafkaMessage.ParentURL)
-			if err != nil {
+		select {
+		case ev := <-kafkaClient.Events():
+			switch e := ev.(type) {
+			case kafka.AssignedPartitions:
 				logWarning.WithFields(logrus.Fields{
-					"kafka_msg_url": newKafkaMessage.URL,
-					"error":         err,
-				}).Warning("Unable to parse parent URL from Kafka message")
-			} else {
-				if newKafkaMessage.HopsCount > 0 {
-					newParentItemHops = newKafkaMessage.HopsCount - 1
-				}
-				newParentItem := frontier.NewItem(newParentURL, nil, "seed", newParentItemHops)
-				newItem = frontier.NewItem(newURL, newParentItem, "seed", newKafkaMessage.HopsCount)
-			}
-		} else {
-			newItem = frontier.NewItem(newURL, nil, "seed", newKafkaMessage.HopsCount)
-		}
+					"event": e,
+				}).Warning("Kafka consumer event")
+				kafkaClient.Assign(e.Partitions)
+			case kafka.RevokedPartitions:
+				logWarning.WithFields(logrus.Fields{
+					"event": e,
+				}).Warning("Kafka consumer event")
+				kafkaClient.Unassign()
+			case *kafka.Message:
+				var newKafkaMessage = new(kafkaMessage)
+				var newItem = new(frontier.Item)
+				var newParentItemHops uint8
 
-		crawl.Frontier.PushChan <- newItem
+				logInfo.WithFields(logrus.Fields{
+					"value": string(e.Value),
+					"key":   string(e.Key),
+				}).Debug("New message received from Kafka")
+
+				err = json.Unmarshal(e.Value, &newKafkaMessage)
+				if err != nil {
+					logWarning.WithFields(logrus.Fields{
+						"topic":     crawl.KafkaFeedTopic,
+						"key":       e.Key,
+						"value":     e.Value,
+						"partition": e.TopicPartition,
+						"error":     err,
+					}).Warning("Unable to unmarshal message from Kafka")
+					continue
+				}
+
+				// Parse new URL
+				newURL, err := url.Parse(newKafkaMessage.URL)
+				if err != nil {
+					logWarning.WithFields(logrus.Fields{
+						"kafka_msg_url": newKafkaMessage.URL,
+						"error":         err,
+					}).Warning("Unable to parse URL from Kafka message")
+					continue
+				}
+
+				// If the message specify a parent URL, let's construct a parent item
+				if len(newKafkaMessage.ParentURL) > 0 {
+					newParentURL, err := url.Parse(newKafkaMessage.ParentURL)
+					if err != nil {
+						logWarning.WithFields(logrus.Fields{
+							"kafka_msg_url": newKafkaMessage.URL,
+							"error":         err,
+						}).Warning("Unable to parse parent URL from Kafka message")
+					} else {
+						if newKafkaMessage.HopsCount > 0 {
+							newParentItemHops = newKafkaMessage.HopsCount - 1
+						}
+						newParentItem := frontier.NewItem(newParentURL, nil, "seed", newParentItemHops)
+						newItem = frontier.NewItem(newURL, newParentItem, "seed", newKafkaMessage.HopsCount)
+					}
+				} else {
+					newItem = frontier.NewItem(newURL, nil, "seed", newKafkaMessage.HopsCount)
+				}
+
+				crawl.Frontier.PushChan <- newItem
+			case kafka.PartitionEOF:
+				logWarning.WithFields(logrus.Fields{
+					"event": e,
+				}).Warning("Kafka consumer event")
+			case kafka.Error:
+				// Errors should generally be considered as informational, the client will try to automatically recover
+				logWarning.WithFields(logrus.Fields{
+					"event": e,
+				}).Warning("Kafka consumer error")
+			}
+		}
 	}
+
+	kafkaClient.Close()
 }
