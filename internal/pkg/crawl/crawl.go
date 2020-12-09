@@ -29,6 +29,7 @@ type Crawl struct {
 	*sync.Mutex
 	StartTime time.Time
 	SeedList  []frontier.Item
+	Paused    *utils.TAtomBool
 	Finished  *utils.TAtomBool
 
 	// Frontier
@@ -87,6 +88,7 @@ type Crawl struct {
 // Start fire up the crawling process
 func (c *Crawl) Start() (err error) {
 	c.StartTime = time.Now()
+	c.Paused = new(utils.TAtomBool)
 	c.Finished = new(utils.TAtomBool)
 	regexOutlinks = xurls.Relaxed()
 
@@ -104,6 +106,10 @@ func (c *Crawl) Start() (err error) {
 	c.Frontier.Init(c.JobPath, logInfo, logWarning, c.Workers, c.Seencheck)
 	c.Frontier.Load()
 	c.Frontier.Start()
+
+	// Start the background process that will periodically check if the disk
+	// have enough free space, and potentially pause the crawl if it doesn't
+	go c.handleCrawlPause()
 
 	// Function responsible for writing to disk the frontier's hosts pool
 	// and other stats needed to resume the crawl. The process happen every minute.

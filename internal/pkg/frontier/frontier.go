@@ -16,6 +16,8 @@ var logWarning *logrus.Logger
 
 // Frontier holds all the data for a frontier
 type Frontier struct {
+	Paused *utils.TAtomBool
+
 	FinishingQueueWriter *utils.TAtomBool
 	FinishingQueueReader *utils.TAtomBool
 	IsQueueWriterActive  *utils.TAtomBool
@@ -50,6 +52,8 @@ func (f *Frontier) Init(jobPath string, logInf, logWarn *logrus.Logger, workers 
 
 	logInfo = logInf
 	logWarning = logWarn
+
+	f.Paused = new(utils.TAtomBool)
 
 	// Initialize host pool
 	f.HostPool = new(HostPool)

@@ -29,10 +29,12 @@ require (
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/testify v1.6.1 // indirect
+	github.com/spf13/afero v1.4.1
+	github.com/stretchr/testify v1.6.1
 	github.com/tebeka/strftime v0.1.5 // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/zeebo/xxh3 v0.8.2
-	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	mvdan.cc/xurls/v2 v2.2.0
 )

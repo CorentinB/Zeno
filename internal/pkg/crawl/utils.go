@@ -59,6 +59,20 @@ func needBrowser(item *frontier.Item) bool {
 	return false
 }
 
+func (crawl *Crawl) handleCrawlPause() {
+	for {
+		if float64(utils.GetFreeDiskSpace(crawl.JobPath).Avail)/float64(GB) <= 20 {
+			crawl.Paused.Set(true)
+			crawl.Frontier.Paused.Set(true)
+		} else {
+			crawl.Paused.Set(false)
+			crawl.Frontier.Paused.Set(false)
+		}
+
+		time.Sleep(time.Second)
+	}
+}
+
 func (crawl *Crawl) tempFilesCleaner() {
 	for {
 		files, err := ioutil.ReadDir(path.Join(crawl.JobPath, "temp"))

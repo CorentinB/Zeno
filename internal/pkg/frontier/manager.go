@@ -14,6 +14,10 @@ func (f *Frontier) writeItemsToQueue() {
 	for item := range f.PushChan {
 		item := item
 
+		if f.Paused.Get() {
+			time.Sleep(time.Second)
+		}
+
 		// If --seencheck is enabled, then we check if the URI is in the
 		// seencheck DB before doing anything. If it is in it, we skip the item
 		if f.UseSeencheck {
@@ -61,6 +65,10 @@ func (f *Frontier) readItemsFromQueue() {
 	}
 
 	for {
+		if f.Paused.Get() {
+			time.Sleep(time.Second)
+		}
+
 		// We cleanup the hosts pool by removing
 		// all the hosts with a count of 0, then
 		// we make a snapshot of the hosts
@@ -78,6 +86,10 @@ func (f *Frontier) readItemsFromQueue() {
 		// that allow us to crawl a wide variety of domains
 		// at the same time, maximizing our speed
 		for host := range mapCopy {
+			if f.Paused.Get() {
+				time.Sleep(time.Second)
+			}
+
 			if f.HostPool.GetCount(host) == 0 {
 				continue
 			}

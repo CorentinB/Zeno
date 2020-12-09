@@ -20,6 +20,11 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 	var newReq *http.Request
 	var URL *url.URL
 
+	// Check if the crawl is paused
+	for c.Paused.Get() {
+		time.Sleep(time.Second)
+	}
+
 	// Execute GET request
 	if c.ClientProxied == nil || utils.StringContainsSliceElements(req.URL.Host, c.BypassProxy) {
 		resp, err = c.Client.Do(req)

@@ -107,6 +107,10 @@ func (crawl *Crawl) kafkaConsumer() {
 			break
 		}
 
+		if crawl.Paused.Get() {
+			time.Sleep(time.Second)
+		}
+
 		if crawl.ActiveWorkers.Value() >= int64(crawl.Workers-(crawl.Workers/10)) {
 			time.Sleep(time.Millisecond * 100)
 			continue

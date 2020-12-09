@@ -44,6 +44,7 @@ func (c *Crawl) printLiveStats() {
 
 		stats.AddRow("", "")
 		stats.AddRow("  - Job:", c.Job)
+		stats.AddRow("  - State:", c.getCrawlState())
 		stats.AddRow("  - Active workers:", strconv.Itoa(int(c.ActiveWorkers.Value()))+"/"+strconv.Itoa(c.Workers))
 		stats.AddRow("  - URI/s:", c.URIsPerSecond.Rate())
 		stats.AddRow("  - Crawled:", c.Crawled.Value())
@@ -58,4 +59,16 @@ func (c *Crawl) printLiveStats() {
 		writer.Flush()
 		time.Sleep(time.Second * 1)
 	}
+}
+
+func (c *Crawl) getCrawlState() (state string) {
+	if c.Finished.Get() == true {
+		return "finishing"
+	}
+
+	if c.Paused.Get() == true {
+		return "paused"
+	}
+
+	return "running"
 }
