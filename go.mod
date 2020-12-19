@@ -3,7 +3,7 @@ module github.com/CorentinB/Zeno
 go 1.15
 
 require (
-	github.com/CorentinB/warc v0.5.3
+	github.com/CorentinB/warc v0.5.5
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 	github.com/beeker1121/goque v2.1.0+incompatible
