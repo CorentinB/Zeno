@@ -8,9 +8,13 @@ import (
 )
 
 const (
-	B  = 1
+	// B represent a Byte
+	B = 1
+	// KB represent a Kilobyte
 	KB = 1024 * B
+	// MB represent a MegaByte
 	MB = 1024 * KB
+	// GB represent a GigaByte
 	GB = 1024 * MB
 )
 
