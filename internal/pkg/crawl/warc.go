@@ -3,7 +3,6 @@ package crawl
 import (
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -71,7 +70,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the response record
 	var responseRecord = warc.NewRecord()
 	responseRecord.Header.Set("WARC-Type", "response")
-	responseRecord.Header.Set("WARC-Target-URI", url.QueryEscape(resp.Request.URL.String()))
+	responseRecord.Header.Set("WARC-Target-URI", strings.ReplaceAll(resp.Request.URL.String(), " ", "%20"))
 	responseRecord.Header.Set("Content-Type", "application/http; msgtype=response")
 
 	// If the Content-Length is unknown or if it is higher than 2MB, then
@@ -103,7 +102,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the request record
 	var requestRecord = warc.NewRecord()
 	requestRecord.Header.Set("WARC-Type", "request")
-	requestRecord.Header.Set("WARC-Target-URI", url.QueryEscape(resp.Request.URL.String()))
+	requestRecord.Header.Set("WARC-Target-URI", strings.ReplaceAll(resp.Request.URL.String(), " ", "%20"))
 	requestRecord.Header.Set("Host", resp.Request.URL.Host)
 	requestRecord.Header.Set("Content-Type", "application/http; msgtype=request")
 
