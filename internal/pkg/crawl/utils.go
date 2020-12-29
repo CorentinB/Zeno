@@ -30,7 +30,7 @@ func extractLinksFromText(source string) (links []url.URL) {
 
 	// Validate links
 	for _, link := range rawLinks {
-		URL, err := url.Parse(link)
+		URL, err := url.Parse(utils.CleanURL(link))
 		if err != nil {
 			continue
 		}
