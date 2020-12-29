@@ -61,7 +61,7 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 
 		defer markTempFileDone(respPath)
 
-		URL, err = url.Parse(resp.Header.Get("location"))
+		URL, err = url.Parse(utils.CleanURL(resp.Header.Get("location")))
 		if err != nil {
 			return resp, respPath, err
 		}
@@ -197,7 +197,7 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	}
 
 	// Store the base URL to turn relative links into absolute links later
-	base, err := url.Parse(resp.Request.URL.String())
+	base, err := url.Parse(utils.CleanURL(resp.Request.URL.String()))
 	if err != nil {
 		logWarning.WithFields(logrus.Fields{
 			"error": err,

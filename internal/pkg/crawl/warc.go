@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CorentinB/Zeno/internal/pkg/utils"
 	"github.com/CorentinB/warc"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
@@ -70,7 +71,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the response record
 	var responseRecord = warc.NewRecord()
 	responseRecord.Header.Set("WARC-Type", "response")
-	responseRecord.Header.Set("WARC-Target-URI", strings.ReplaceAll(resp.Request.URL.String(), " ", "%20"))
+	responseRecord.Header.Set("WARC-Target-URI", utils.CleanURL(resp.Request.URL.String()))
 	responseRecord.Header.Set("Content-Type", "application/http; msgtype=response")
 
 	// If the Content-Length is unknown or if it is higher than 2MB, then
@@ -102,7 +103,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the request record
 	var requestRecord = warc.NewRecord()
 	requestRecord.Header.Set("WARC-Type", "request")
-	requestRecord.Header.Set("WARC-Target-URI", strings.ReplaceAll(resp.Request.URL.String(), " ", "%20"))
+	requestRecord.Header.Set("WARC-Target-URI", utils.CleanURL(resp.Request.URL.String()))
 	requestRecord.Header.Set("Host", resp.Request.URL.Host)
 	requestRecord.Header.Set("Content-Type", "application/http; msgtype=request")
 

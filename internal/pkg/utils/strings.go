@@ -7,10 +7,15 @@ import (
 	"strings"
 )
 
+// CleanURL replace all spaces by %20, after trimming all leading and trailing white spaces
+func CleanURL(URL string) string {
+	return strings.ReplaceAll(strings.TrimSpace(URL), " ", "%20")
+}
+
 // StringSliceToURLSlice takes a slice of string and return a slice of url.URL
 func StringSliceToURLSlice(rawURLs []string) (URLs []url.URL) {
 	for _, URL := range rawURLs {
-		URL, err := url.Parse(URL)
+		URL, err := url.Parse(CleanURL(URL))
 		if err != nil {
 			continue
 		}
