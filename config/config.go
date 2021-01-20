@@ -9,6 +9,7 @@ type Flags struct {
 	MaxHops   uint
 	Headless  bool
 	Seencheck bool
+	LiveStats bool
 	JSON      bool
 	Debug     bool
 

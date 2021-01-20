@@ -27,6 +27,9 @@ type PrometheusMetrics struct {
 // Crawl define the parameters of a crawl process
 type Crawl struct {
 	*sync.Mutex
+	Debug     bool
+	JSONLog   bool
+	LiveStats bool
 	StartTime time.Time
 	SeedList  []frontier.Item
 	Paused    *utils.TAtomBool
@@ -93,7 +96,7 @@ func (c *Crawl) Start() (err error) {
 	regexOutlinks = xurls.Relaxed()
 
 	// Setup logging
-	logInfo, logWarning = utils.SetupLogging(c.JobPath)
+	logInfo, logWarning = c.SetupLogging()
 
 	// Initialize HTTP client
 	c.initHTTPClient()
@@ -135,7 +138,9 @@ func (c *Crawl) Start() (err error) {
 	}
 
 	// Start the process responsible for printing live stats on the standard output
-	go c.printLiveStats()
+	if c.LiveStats {
+		go c.printLiveStats()
+	}
 
 	// If Kafka parameters are specified, then we start the background
 	// processes responsible for pulling and pushing seeds from and to Kafka

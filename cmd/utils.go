@@ -69,6 +69,9 @@ func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 
 	c.UserAgent = flags.UserAgent
 	c.Headless = flags.Headless
+	c.LiveStats = flags.LiveStats
+	c.JSONLog = flags.JSON
+	c.Debug = flags.Debug
 
 	// Proxy settings
 	c.Proxy = flags.Proxy

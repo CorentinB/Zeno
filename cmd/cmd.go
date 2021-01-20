@@ -36,6 +36,11 @@ var GlobalFlags = []cli.Flag{
 		Destination: &config.App.Flags.MaxHops,
 	},
 	&cli.BoolFlag{
+		Name:        "live-stats",
+		Usage:       "Print live statistics instead of crawl logs",
+		Destination: &config.App.Flags.LiveStats,
+	},
+	&cli.BoolFlag{
 		Name:        "headless",
 		Usage:       "Use headless browsers instead of standard GET requests",
 		Destination: &config.App.Flags.Headless,
