@@ -131,5 +131,10 @@ func (f *Frontier) readItemsFromQueue() {
 				return
 			}
 		}
+
+		if f.FinishingQueueReader.Get() == true {
+			f.IsQueueReaderActive.Set(false)
+			return
+		}
 	}
 }

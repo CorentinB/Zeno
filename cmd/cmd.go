@@ -47,6 +47,7 @@ var GlobalFlags = []cli.Flag{
 	},
 	&cli.BoolFlag{
 		Name:        "seencheck",
+		Value:       true,
 		Usage:       "Simple seen check to avoid re-crawling of URIs",
 		Destination: &config.App.Flags.Seencheck,
 	},
