@@ -77,7 +77,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// If the Content-Length is unknown or if it is higher than 2MB, then
 	// we process the response directly on disk to not risk maxing-out the RAM.
 	// Else, we use the httputil.DumpResponse function to dump the response.
-	if resp.ContentLength == -1 || resp.ContentLength > 2097152 {
+	if resp.ContentLength == -1 || resp.ContentLength > 4194304 {
 		responsePath, err = c.dumpResponseToFile(resp)
 		if err != nil {
 			return responsePath, err
