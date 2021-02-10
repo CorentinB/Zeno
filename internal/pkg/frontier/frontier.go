@@ -6,8 +6,8 @@ import (
 
 	"github.com/CorentinB/Zeno/internal/pkg/utils"
 	"github.com/beeker1121/goque"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/paulbellamy/ratecounter"
-	"github.com/philippgille/gokv/leveldb"
 	"github.com/sirupsen/logrus"
 )
 
@@ -78,7 +78,7 @@ func (f *Frontier) Init(jobPath string, logInf, logWarn *logrus.Logger, workers 
 	if f.UseSeencheck {
 		f.Seencheck = new(Seencheck)
 		f.Seencheck.SeenCount = new(ratecounter.Counter)
-		f.Seencheck.SeenDB, err = leveldb.NewStore(leveldb.Options{Path: path.Join(jobPath, "seencheck")})
+		f.Seencheck.SeenDB, err = badger.Open(badger.DefaultOptions(path.Join(jobPath, "seencheck")))
 		if err != nil {
 			return err
 		}
