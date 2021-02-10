@@ -10,6 +10,12 @@ import (
 )
 
 var GlobalFlags = []cli.Flag{
+	&cli.BoolFlag{
+		Name:        "pprof",
+		Value:       false,
+		Usage:       "Dump pprof data",
+		Destination: &config.App.Flags.Pprof,
+	},
 	&cli.StringFlag{
 		Name:        "user-agent",
 		Value:       "Zeno",

@@ -18,6 +18,8 @@ import (
 func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 	var c = new(crawl.Crawl)
 
+	c.Pprof = flags.Pprof
+
 	// Statistics counters
 	c.Crawled = new(ratecounter.Counter)
 	c.ActiveWorkers = new(ratecounter.Counter)
