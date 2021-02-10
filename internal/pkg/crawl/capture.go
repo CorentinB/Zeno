@@ -86,7 +86,7 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 	return resp, respPath, nil
 }
 
-func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error {
+func (c *Crawl) captureAsset(item *frontier.Item) error {
 	var executionStart = time.Now()
 	var resp *http.Response
 
@@ -110,13 +110,6 @@ func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error 
 		return err
 	}
 
-	req.Header.Set("Referer", "https://www.tiktok.com/")
-
-	// Apply cookies obtained from the original URL captured
-	for i := range cookies {
-		req.AddCookie(cookies[i])
-	}
-
 	resp, respPath, err := c.executeGET(item, req)
 	if err != nil {
 		markTempFileDone(respPath)
@@ -135,33 +128,6 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	var executionStart = time.Now()
 	var resp *http.Response
 
-	initReq, err := http.NewRequest("GET", "https://www.tiktok.com/", nil)
-	if err != nil {
-		logWarning.WithFields(logrus.Fields{
-			"error": err,
-		}).Warning(item.URL.String())
-		return
-	}
-	if c.ClientProxied == nil {
-		resp, err = c.Client.Do(initReq)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"error": err,
-			}).Warning(item.URL.String())
-			return
-		}
-	} else {
-		resp, err = c.ClientProxied.Do(initReq)
-		if err != nil {
-			logWarning.WithFields(logrus.Fields{
-				"error": err,
-			}).Warning(item.URL.String())
-			return
-		}
-	}
-	cookies := resp.Cookies()
-	resp.Body.Close()
-
 	// Prepare GET request
 	req, err := http.NewRequest("GET", item.URL.String(), nil)
 	if err != nil {
@@ -171,14 +137,8 @@ func (c *Crawl) Capture(item *frontier.Item) {
 		return
 	}
 
-	for i := range cookies {
-		req.AddCookie(cookies[i])
-	}
-
 	if item.Hop > 0 && len(item.ParentItem.URL.String()) > 0 {
 		req.Header.Set("Referer", item.ParentItem.URL.String())
-	} else {
-		req.Header.Set("Referer", "https://www.tiktok.com/")
 	}
 
 	resp, respPath, err := c.executeGET(item, req)
@@ -276,7 +236,7 @@ func (c *Crawl) Capture(item *frontier.Item) {
 		}
 
 		newAsset := frontier.NewItem(&asset, item, "asset", item.Hop)
-		err = c.captureAsset(newAsset, cookies)
+		err = c.captureAsset(newAsset)
 		if err != nil {
 			logWarning.WithFields(logrus.Fields{
 				"error":          err,

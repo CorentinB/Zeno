@@ -1,11 +1,7 @@
 package crawl
 
 import (
-	"log"
 	"net/http"
-	"os"
-	"path"
-	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -102,21 +98,6 @@ func (c *Crawl) Start() (err error) {
 
 	// Setup logging
 	logInfo, logWarning = c.SetupLogging()
-
-	// Start pprof
-	if c.Pprof {
-		var heapDumpFilePath = path.Join(c.JobPath, "heap.out")
-
-		logrus.Info("--pprof detected, dumping heap data to", heapDumpFilePath)
-
-		heapDumpFile, err := os.OpenFile(heapDumpFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer heapDumpFile.Close()
-
-		pprof.WriteHeapProfile(heapDumpFile)
-	}
 
 	// Initialize HTTP client
 	c.initHTTPClient()
