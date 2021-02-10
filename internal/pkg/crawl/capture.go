@@ -94,7 +94,10 @@ func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error 
 	// seencheck DB before doing anything. If it is in it, we skip the item
 	if c.Seencheck {
 		hash := strconv.FormatUint(item.Hash, 10)
-		found, _ := c.Frontier.Seencheck.IsSeen(hash)
+		found, _, err := c.Frontier.Seencheck.IsSeen(hash)
+		if err != nil {
+			c.Frontier.Seencheck.Seen(hash, item.Type)
+		}
 		if found {
 			return nil
 		}
@@ -157,6 +160,7 @@ func (c *Crawl) Capture(item *frontier.Item) {
 		}
 	}
 	cookies := resp.Cookies()
+	resp.Body.Close()
 
 	// Prepare GET request
 	req, err := http.NewRequest("GET", item.URL.String(), nil)
