@@ -34,7 +34,7 @@ func (seencheck *Seencheck) IsSeen(hash string) (found bool, value string, err e
 		return nil
 	})
 
-	return found, value, nil
+	return true, value, nil
 }
 
 // Seen mark a hash as seen and increment the seen counter
