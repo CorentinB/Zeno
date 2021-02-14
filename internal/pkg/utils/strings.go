@@ -44,10 +44,10 @@ func GetSHA1(str string) string {
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-// StringInSlice return true if the string is in the slice
-func StringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
+// IsHostExcluded return true if the host is in the excluded hosts slice
+func IsHostExcluded(a string, excludeList []string) bool {
+	for _, b := range excludeList {
+		if strings.HasSuffix(a, b) {
 			return true
 		}
 	}
