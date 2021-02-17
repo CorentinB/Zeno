@@ -132,6 +132,11 @@ func (c *Crawl) Start() (err error) {
 		go c.startAPI()
 	}
 
+	// Start the process responsible for printing live stats on the standard output
+	if c.LiveStats {
+		go c.printLiveStats()
+	}
+
 	// If Kafka parameters are specified, then we start the background
 	// processes responsible for pulling and pushing seeds from and to Kafka
 	if c.UseKafka {
@@ -155,11 +160,6 @@ func (c *Crawl) Start() (err error) {
 	for i := 0; i < c.Workers; i++ {
 		c.WorkerPool.Add()
 		go c.Worker(&c.WorkerPool)
-	}
-
-	// Start the process responsible for printing live stats on the standard output
-	if c.LiveStats {
-		go c.printLiveStats()
 	}
 
 	// Start the background process that will catch when there
