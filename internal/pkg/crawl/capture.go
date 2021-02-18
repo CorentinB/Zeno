@@ -234,8 +234,8 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	for _, asset := range assets {
 		c.Frontier.QueueCount.Incr(-1)
 
-		// Just making sure we do not over archive
-		if item.URL.String() == asset.String() {
+		// Make sure we do not over archive or archive an excluded host
+		if item.URL.String() == asset.String() || utils.IsHostExcluded(asset.Host, c.ExcludedHosts) {
 			continue
 		}
 
