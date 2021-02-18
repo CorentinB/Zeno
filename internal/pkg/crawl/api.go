@@ -18,7 +18,9 @@ func (crawl *Crawl) startAPI() {
 
 	r := gin.Default()
 
-	pprof.Register(r)
+	if crawl.Pprof {
+		pprof.Register(r)
+	}
 
 	logInfo.Info("Starting API")
 	r.GET("/", func(c *gin.Context) {

@@ -7,10 +7,15 @@ import (
 	"strings"
 )
 
+// CleanURL replace all spaces by %20, after trimming all leading and trailing white spaces
+func CleanURL(URL string) string {
+	return strings.ReplaceAll(strings.TrimSpace(URL), " ", "%20")
+}
+
 // StringSliceToURLSlice takes a slice of string and return a slice of url.URL
 func StringSliceToURLSlice(rawURLs []string) (URLs []url.URL) {
 	for _, URL := range rawURLs {
-		URL, err := url.Parse(URL)
+		URL, err := url.Parse(CleanURL(URL))
 		if err != nil {
 			continue
 		}
@@ -42,7 +47,17 @@ func GetSHA1(str string) string {
 // StringInSlice return true if the string is in the slice
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
-		if b == a {
+		if a == b {
+			return true
+		}
+	}
+	return false
+}
+
+// IsHostExcluded return true if the host is in the excluded hosts slice
+func IsHostExcluded(a string, excludeList []string) bool {
+	for _, b := range excludeList {
+		if strings.HasSuffix(a, b) {
 			return true
 		}
 	}

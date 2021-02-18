@@ -10,6 +10,12 @@ import (
 )
 
 var GlobalFlags = []cli.Flag{
+	&cli.BoolFlag{
+		Name:        "pprof",
+		Value:       false,
+		Usage:       "Dump pprof data",
+		Destination: &config.App.Flags.Pprof,
+	},
 	&cli.StringFlag{
 		Name:        "user-agent",
 		Value:       "Zeno",
@@ -36,12 +42,18 @@ var GlobalFlags = []cli.Flag{
 		Destination: &config.App.Flags.MaxHops,
 	},
 	&cli.BoolFlag{
+		Name:        "live-stats",
+		Usage:       "Print live statistics instead of crawl logs",
+		Destination: &config.App.Flags.LiveStats,
+	},
+	&cli.BoolFlag{
 		Name:        "headless",
 		Usage:       "Use headless browsers instead of standard GET requests",
 		Destination: &config.App.Flags.Headless,
 	},
 	&cli.BoolFlag{
 		Name:        "seencheck",
+		Value:       true,
 		Usage:       "Simple seen check to avoid re-crawling of URIs",
 		Destination: &config.App.Flags.Seencheck,
 	},

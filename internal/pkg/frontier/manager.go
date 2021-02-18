@@ -22,7 +22,10 @@ func (f *Frontier) writeItemsToQueue() {
 		// seencheck DB before doing anything. If it is in it, we skip the item
 		if f.UseSeencheck {
 			hash := strconv.FormatUint(item.Hash, 10)
-			found, value := f.Seencheck.IsSeen(hash)
+			found, value, err := f.Seencheck.IsSeen(hash)
+			if err != nil {
+				f.Seencheck.Seen(hash, item.Type)
+			}
 			if !found || (value == "asset" && item.Type == "seed") {
 				f.Seencheck.Seen(hash, item.Type)
 			} else {
@@ -130,6 +133,11 @@ func (f *Frontier) readItemsFromQueue() {
 				f.IsQueueReaderActive.Set(false)
 				return
 			}
+		}
+
+		if f.FinishingQueueReader.Get() == true {
+			f.IsQueueReaderActive.Set(false)
+			return
 		}
 	}
 }

@@ -61,7 +61,7 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 
 		defer markTempFileDone(respPath)
 
-		URL, err = url.Parse(resp.Header.Get("location"))
+		URL, err = url.Parse(utils.CleanURL(resp.Header.Get("location")))
 		if err != nil {
 			return resp, respPath, err
 		}
@@ -86,7 +86,7 @@ func (c *Crawl) executeGET(parentItem *frontier.Item, req *http.Request) (resp *
 	return resp, respPath, nil
 }
 
-func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error {
+func (c *Crawl) captureAsset(item *frontier.Item) error {
 	var executionStart = time.Now()
 	var resp *http.Response
 
@@ -94,7 +94,10 @@ func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error 
 	// seencheck DB before doing anything. If it is in it, we skip the item
 	if c.Seencheck {
 		hash := strconv.FormatUint(item.Hash, 10)
-		found, _ := c.Frontier.Seencheck.IsSeen(hash)
+		found, _, err := c.Frontier.Seencheck.IsSeen(hash)
+		if err != nil {
+			c.Frontier.Seencheck.Seen(hash, item.Type)
+		}
 		if found {
 			return nil
 		}
@@ -105,13 +108,6 @@ func (c *Crawl) captureAsset(item *frontier.Item, cookies []*http.Cookie) error 
 	req, err := http.NewRequest("GET", item.URL.String(), nil)
 	if err != nil {
 		return err
-	}
-
-	req.Header.Set("Referer", item.ParentItem.URL.String())
-
-	// Apply cookies obtained from the original URL captured
-	for i := range cookies {
-		req.AddCookie(cookies[i])
 	}
 
 	resp, respPath, err := c.executeGET(item, req)
@@ -165,7 +161,7 @@ func (c *Crawl) Capture(item *frontier.Item) {
 	}
 
 	// Store the base URL to turn relative links into absolute links later
-	base, err := url.Parse(resp.Request.URL.String())
+	base, err := url.Parse(utils.CleanURL(resp.Request.URL.String()))
 	if err != nil {
 		logWarning.WithFields(logrus.Fields{
 			"error": err,
@@ -240,7 +236,7 @@ func (c *Crawl) Capture(item *frontier.Item) {
 		}
 
 		newAsset := frontier.NewItem(&asset, item, "asset", item.Hop)
-		err = c.captureAsset(newAsset, resp.Cookies())
+		err = c.captureAsset(newAsset)
 		if err != nil {
 			logWarning.WithFields(logrus.Fields{
 				"error":          err,

@@ -18,6 +18,8 @@ import (
 func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 	var c = new(crawl.Crawl)
 
+	c.Pprof = flags.Pprof
+
 	// Statistics counters
 	c.Crawled = new(ratecounter.Counter)
 	c.ActiveWorkers = new(ratecounter.Counter)
@@ -69,6 +71,9 @@ func InitCrawlWithCMD(flags config.Flags) *crawl.Crawl {
 
 	c.UserAgent = flags.UserAgent
 	c.Headless = flags.Headless
+	c.LiveStats = flags.LiveStats
+	c.JSONLog = flags.JSON
+	c.Debug = flags.Debug
 
 	// Proxy settings
 	c.Proxy = flags.Proxy

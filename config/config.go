@@ -3,12 +3,14 @@ package config
 import "github.com/urfave/cli/v2"
 
 type Flags struct {
+	Pprof     bool
 	UserAgent string
 	Job       string
 	Workers   int
 	MaxHops   uint
 	Headless  bool
 	Seencheck bool
+	LiveStats bool
 	JSON      bool
 	Debug     bool
 

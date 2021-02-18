@@ -27,6 +27,10 @@ type PrometheusMetrics struct {
 // Crawl define the parameters of a crawl process
 type Crawl struct {
 	*sync.Mutex
+	Pprof     bool
+	Debug     bool
+	JSONLog   bool
+	LiveStats bool
 	StartTime time.Time
 	SeedList  []frontier.Item
 	Paused    *utils.TAtomBool
@@ -93,7 +97,7 @@ func (c *Crawl) Start() (err error) {
 	regexOutlinks = xurls.Relaxed()
 
 	// Setup logging
-	logInfo, logWarning = utils.SetupLogging(c.JobPath)
+	logInfo, logWarning = c.SetupLogging()
 
 	// Initialize HTTP client
 	c.initHTTPClient()
@@ -128,14 +132,10 @@ func (c *Crawl) Start() (err error) {
 		go c.startAPI()
 	}
 
-	// Fire up the desired amount of workers
-	for i := 0; i < c.Workers; i++ {
-		c.WorkerPool.Add()
-		go c.Worker(&c.WorkerPool)
-	}
-
 	// Start the process responsible for printing live stats on the standard output
-	go c.printLiveStats()
+	if c.LiveStats {
+		go c.printLiveStats()
+	}
 
 	// If Kafka parameters are specified, then we start the background
 	// processes responsible for pulling and pushing seeds from and to Kafka
@@ -154,6 +154,12 @@ func (c *Crawl) Start() (err error) {
 		}
 		c.SeedList = nil
 		logrus.Info("All seeds are now in queue, crawling will start")
+	}
+
+	// Fire up the desired amount of workers
+	for i := 0; i < c.Workers; i++ {
+		c.WorkerPool.Add()
+		go c.Worker(&c.WorkerPool)
 	}
 
 	// Start the background process that will catch when there

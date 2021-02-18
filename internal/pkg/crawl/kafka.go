@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/CorentinB/Zeno/internal/pkg/frontier"
+	"github.com/CorentinB/Zeno/internal/pkg/utils"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/sirupsen/logrus"
 )
@@ -152,7 +153,7 @@ func (crawl *Crawl) kafkaConsumer() {
 				}
 
 				// Parse new URL
-				newURL, err := url.Parse(newKafkaMessage.URL)
+				newURL, err := url.Parse(utils.CleanURL(newKafkaMessage.URL))
 				if err != nil {
 					logWarning.WithFields(logrus.Fields{
 						"kafka_msg_url": newKafkaMessage.URL,
@@ -163,7 +164,7 @@ func (crawl *Crawl) kafkaConsumer() {
 
 				// If the message specify a parent URL, let's construct a parent item
 				if len(newKafkaMessage.ParentURL) > 0 {
-					newParentURL, err := url.Parse(newKafkaMessage.ParentURL)
+					newParentURL, err := url.Parse(utils.CleanURL(newKafkaMessage.ParentURL))
 					if err != nil {
 						logWarning.WithFields(logrus.Fields{
 							"kafka_msg_url": newKafkaMessage.URL,

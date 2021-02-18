@@ -3,12 +3,12 @@ package crawl
 import (
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/CorentinB/Zeno/internal/pkg/utils"
 	"github.com/CorentinB/warc"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
@@ -71,13 +71,13 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the response record
 	var responseRecord = warc.NewRecord()
 	responseRecord.Header.Set("WARC-Type", "response")
-	responseRecord.Header.Set("WARC-Target-URI", url.QueryEscape(resp.Request.URL.String()))
+	responseRecord.Header.Set("WARC-Target-URI", utils.CleanURL(resp.Request.URL.String()))
 	responseRecord.Header.Set("Content-Type", "application/http; msgtype=response")
 
 	// If the Content-Length is unknown or if it is higher than 2MB, then
 	// we process the response directly on disk to not risk maxing-out the RAM.
 	// Else, we use the httputil.DumpResponse function to dump the response.
-	if resp.ContentLength == -1 || resp.ContentLength > 2097152 {
+	if resp.ContentLength == -1 || resp.ContentLength > 4194304 {
 		responsePath, err = c.dumpResponseToFile(resp)
 		if err != nil {
 			return responsePath, err
@@ -103,7 +103,7 @@ func (c *Crawl) writeWARC(resp *http.Response) (string, error) {
 	// Initialize the request record
 	var requestRecord = warc.NewRecord()
 	requestRecord.Header.Set("WARC-Type", "request")
-	requestRecord.Header.Set("WARC-Target-URI", url.QueryEscape(resp.Request.URL.String()))
+	requestRecord.Header.Set("WARC-Target-URI", utils.CleanURL(resp.Request.URL.String()))
 	requestRecord.Header.Set("Host", resp.Request.URL.Host)
 	requestRecord.Header.Set("Content-Type", "application/http; msgtype=request")
 

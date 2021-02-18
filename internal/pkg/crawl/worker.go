@@ -32,7 +32,7 @@ func (c *Crawl) Worker(wg *sizedwaitgroup.SizedWaitGroup) {
 		}
 
 		// If the host of the item is in the host exclusion list, we skip it
-		if utils.StringInSlice(item.Host, c.ExcludedHosts) {
+		if utils.IsHostExcluded(item.Host, c.ExcludedHosts) {
 			continue
 		}
 
