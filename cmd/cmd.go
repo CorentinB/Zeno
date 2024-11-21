@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/internetarchive/Zeno/config"
+	"github.com/internetarchive/Zeno/internal/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +27,7 @@ Authors:
 			return fmt.Errorf("error initializing config: %s", err)
 		}
 
-		cfg = config.GetConfig()
+		cfg = config.Get()
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

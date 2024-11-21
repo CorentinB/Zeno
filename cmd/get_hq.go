@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/internetarchive/Zeno/internal/pkg/crawl"
+	"github.com/internetarchive/Zeno/internal/pkg/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,33 +14,13 @@ var getHQCmd = &cobra.Command{
 		if cfg == nil {
 			return fmt.Errorf("viper config is nil")
 		}
+
 		cfg.HQ = true
+
 		return nil
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// Init crawl using the flags provided
-		crawl, err := crawl.GenerateCrawlConfig(cfg)
-		if err != nil {
-			if crawl != nil && crawl.Log != nil {
-				crawl.Log.WithFields(map[string]interface{}{
-					"crawl": crawl,
-					"err":   err.Error(),
-				}).Error("'get hq' exited due to error")
-			}
-			return err
-		}
-
-		// start crawl
-		err = crawl.Start()
-		if err != nil {
-			crawl.Log.WithFields(map[string]interface{}{
-				"crawl": crawl,
-				"err":   err.Error(),
-			}).Error("'get hq' Crawl() exited due to error")
-			return err
-		}
-
-		return nil
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		return config.GenerateCrawlConfig()
 	},
 }
 
@@ -52,8 +32,8 @@ func getHQCmdFlags(getHQCmd *cobra.Command) {
 	getHQCmd.PersistentFlags().String("hq-project", "", "Crawl HQ project.")
 	getHQCmd.PersistentFlags().Bool("hq-continuous-pull", false, "If turned on, the crawler will pull URLs from Crawl HQ continuously.")
 	getHQCmd.PersistentFlags().String("hq-strategy", "lifo", "Crawl HQ feeding strategy.")
-	getHQCmd.PersistentFlags().Int64("hq-batch-size", 0, "Crawl HQ feeding batch size.")
-	getHQCmd.PersistentFlags().Int64("hq-batch-concurrency", 1, "Number of concurrent requests to do to get the --hq-batch-size, if batch size is 300 and batch-concurrency is 10, 30 requests will be done concurrently.")
+	getHQCmd.PersistentFlags().Int("hq-batch-size", 0, "Crawl HQ feeding batch size.")
+	getHQCmd.PersistentFlags().Int("hq-batch-concurrency", 1, "Number of concurrent requests to do to get the --hq-batch-size, if batch size is 300 and batch-concurrency is 10, 30 requests will be done concurrently.")
 	getHQCmd.PersistentFlags().Bool("hq-rate-limiting-send-back", false, "If turned on, the crawler will send back URLs that hit a rate limit to crawl HQ.")
 
 	getHQCmd.MarkPersistentFlagRequired("hq-address")

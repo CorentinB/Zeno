@@ -35,24 +35,24 @@ func (c *Crawl) executeGET(item *queue.Item, req *http.Request, isRedirection bo
 		URL            *url.URL
 	)
 
-	defer func() {
-		if c.PrometheusMetrics != nil {
-			c.PrometheusMetrics.DownloadedURI.Inc()
-		}
+	// defer func() {
+	// 	if c.PrometheusMetrics != nil {
+	// 		c.PrometheusMetrics.DownloadedURI.Inc()
+	// 	}
 
-		c.URIsPerSecond.Incr(1)
+	// 	c.URIsPerSecond.Incr(1)
 
-		if item.Type == "seed" {
-			c.CrawledSeeds.Incr(1)
-		} else if item.Type == "asset" {
-			c.CrawledAssets.Incr(1)
-		}
-	}()
+	// 	if item.Type == "seed" {
+	// 		c.CrawledSeeds.Incr(1)
+	// 	} else if item.Type == "asset" {
+	// 		c.CrawledAssets.Incr(1)
+	// 	}
+	// }()
 
-	// Check if the crawl is paused
-	for c.Paused.Get() {
-		time.Sleep(time.Second)
-	}
+	// // Check if the crawl is paused
+	// for c.Paused.Get() {
+	// 	time.Sleep(time.Second)
+	// }
 
 	// Retry on 429 error
 	for retry := uint8(0); retry < c.MaxRetry; retry++ {

@@ -1,10 +1,9 @@
 package utils
 
 import (
+	"log/slog"
 	"net"
 	"os"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Note: GetOutboundIP does not establish any connection and the
@@ -18,7 +17,7 @@ func GetOutboundIP() net.IP {
 	for {
 		conn, err = net.Dial("udp", "24.24.24.24:24200")
 		if err != nil {
-			logrus.Errorf("error getting outbound IP, retrying: %s", err)
+			slog.Error("error getting outbound IP, retrying", "err", err)
 			continue
 		}
 		defer conn.Close()
@@ -31,7 +30,7 @@ func GetOutboundIP() net.IP {
 func GetHostname() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		logrus.Errorf("error getting hostname: %s", err)
+		slog.Error("error getting hostname", "err", err)
 	}
 
 	return hostname

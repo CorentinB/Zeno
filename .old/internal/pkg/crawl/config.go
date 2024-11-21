@@ -116,9 +116,7 @@ type Crawl struct {
 	HQStrategy             string
 	HQBatchConcurrency     int
 	HQBatchSize            int
-	HQContinuousPull       bool
 	HQClient               *gocrawlhq.Client
-	HQConsumerState        string
 	HQFinishedChannel      chan *queue.Item
 	HQProducerChannel      chan *queue.Item
 	HQChannelsWg           *sync.WaitGroup
@@ -321,7 +319,6 @@ func GenerateCrawlConfig(config *config.Config) (*Crawl, error) {
 	c.HQStrategy = config.HQStrategy
 	c.HQBatchSize = int(config.HQBatchSize)
 	c.HQBatchConcurrency = config.HQBatchConcurrency
-	c.HQContinuousPull = config.HQContinuousPull
 	c.HQRateLimitingSendBack = config.HQRateLimitSendBack
 
 	// Handover mechanism
