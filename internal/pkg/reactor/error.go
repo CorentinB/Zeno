@@ -16,4 +16,6 @@ var (
 	ErrFeedbackItemNotPresent = errors.New("feedback item not present in state table")
 	// ErrFinisehdItemNotFound is the error returned when an item been marked as finished but not found in the state table
 	ErrFinisehdItemNotFound = errors.New("markAsFinished item not present in state table")
+	// ErrItemAlreadyPresent is the error returned when an item is already present in the state table
+	ErrItemAlreadyPresent = errors.New("item already present in state table")
 )

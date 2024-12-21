@@ -139,11 +139,12 @@ func ReceiveInsert(item *models.Item) error {
 		if item.GetSource() != models.ItemSourceQueue && item.GetSource() != models.ItemSourceHQ {
 			item.SetSource(models.ItemSourceInsert)
 		}
-		loadedItem, loaded := globalReactor.stateTable.LoadOrStore(item.GetID(), item)
+		_, loaded := globalReactor.stateTable.LoadOrStore(item.GetID(), item)
 		if loaded {
-			spew.Dump(loadedItem.(*models.Item))
-			spew.Dump(item)
-			panic("item already present in reactor")
+			// spew.Dump(loadedItem.(*models.Item))
+			// spew.Dump(item)
+			// panic("item already present in reactor")
+			return ErrItemAlreadyPresent
 		}
 
 		globalReactor.input <- item

@@ -72,7 +72,7 @@ func consumerFetcher(ctx context.Context, wg *sync.WaitGroup, urlBuffer chan<- *
 		"component": "hq.consumerFetcher",
 	})
 
-	var previousBatchReceived []gocrawlhq.URL
+	// var previousBatchReceived []gocrawlhq.URL
 
 	for {
 		// Check for context cancellation
@@ -101,19 +101,19 @@ func consumerFetcher(ctx context.Context, wg *sync.WaitGroup, urlBuffer chan<- *
 			panic(err)
 		}
 
-		// Debug check to troubleshoot a problem where the same seed might be received twice in contiguous batches
-		if previousBatchReceived != nil {
-			// Concat the previous and current batch
-			concatedBatches := append(previousBatchReceived, URLs...)
-			err := ensureAllURLsUnique(concatedBatches)
-			if err != nil {
-				spew.Dump(concatedBatches)
-				panic(err)
-			}
-		}
-		// Create a deep copy of URLs to previousBatchReceived
-		previousBatchReceived = make([]gocrawlhq.URL, len(URLs))
-		copy(previousBatchReceived, URLs)
+		// // Debug check to troubleshoot a problem where the same seed might be received twice in contiguous batches
+		// if previousBatchReceived != nil {
+		// 	// Concat the previous and current batch
+		// 	concatedBatches := append(previousBatchReceived, URLs...)
+		// 	err := ensureAllURLsUnique(concatedBatches)
+		// 	if err != nil {
+		// 		spew.Dump(concatedBatches)
+		// 		panic(err)
+		// 	}
+		// }
+		// // Create a deep copy of URLs to previousBatchReceived
+		// previousBatchReceived = make([]gocrawlhq.URL, len(URLs))
+		// copy(previousBatchReceived, URLs)
 
 		// Enqueue URLs into the buffer
 		for i := range URLs {
@@ -148,7 +148,7 @@ func consumerSender(ctx context.Context, wg *sync.WaitGroup, urlBuffer <-chan *g
 		"component": "hq.consumerSender",
 	})
 
-	var previousURLReceived *gocrawlhq.URL
+	// var previousURLReceived *gocrawlhq.URL
 
 	for {
 		select {
@@ -156,14 +156,14 @@ func consumerSender(ctx context.Context, wg *sync.WaitGroup, urlBuffer <-chan *g
 			logger.Debug("closed")
 			return
 		case URL := <-urlBuffer:
-			// Debug check to troubleshoot a problem where the same seed is received twice by the reactor
-			if previousURLReceived != nil && previousURLReceived.ID == URL.ID {
-				spew.Dump(previousURLReceived)
-				spew.Dump(URL)
-				panic("same seed received twice by hq.consumerSender")
-			}
-			urlCopy := *URL
-			previousURLReceived = &urlCopy
+			// // Debug check to troubleshoot a problem where the same seed is received twice by the reactor
+			// if previousURLReceived != nil && previousURLReceived.ID == URL.ID {
+			// 	spew.Dump(previousURLReceived)
+			// 	spew.Dump(URL)
+			// 	panic("same seed received twice by hq.consumerSender")
+			// }
+			// urlCopy := *URL
+			// previousURLReceived = &urlCopy
 
 			var discard bool
 			// Process the URL and create a new Item
@@ -197,7 +197,9 @@ func consumerSender(ctx context.Context, wg *sync.WaitGroup, urlBuffer <-chan *g
 						return
 					}
 				}
-				panic(err)
+				if err != reactor.ErrItemAlreadyPresent {
+					panic(err)
+				}
 			}
 		}
 	}
