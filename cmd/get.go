@@ -54,8 +54,6 @@ func getCMDsFlags(getCmd *cobra.Command) {
 	getCmd.PersistentFlags().StringSlice("exclude-string", []string{}, "Discard any (discovered) URLs containing this string.")
 	getCmd.PersistentFlags().StringSlice("exclusion-file", []string{}, "File containing regex to apply on URLs for exclusion. If the path start with http or https, it will be treated as a URL of a file to download.")
 	getCmd.PersistentFlags().Int("min-space-required", 20, "Minimum space required in GB to continue the crawl.")
-	getCmd.PersistentFlags().Bool("handover", false, "Use the handover mechanism that dispatch URLs via a buffer before enqueuing on disk. (UNSTABLE)")
-	getCmd.PersistentFlags().Bool("ultrasafe-queue", false, "Don't use committed batch writes to the WAL and instead fsync() after each write.")
 
 	// Network flags
 	getCmd.PersistentFlags().String("proxy", "", "Proxy to use when requesting pages.")
