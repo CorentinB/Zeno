@@ -1,5 +1,7 @@
 github.com/CorentinB/warc v0.8.68 h1:WJkIuMr+oLhzAAhcjpPpEuzlWiSXUUl//WqofswH0Rg=
 github.com/CorentinB/warc v0.8.68/go.mod h1:A9Ds2kT59j2Bzbe5pDZ925XmVODwq9fAlmSSS45SRlk=
+github.com/CorentinB/warc v0.8.69 h1:wrypJoSu59hKDyA7nVGvB0hJb259RD+XFgiGhiea0e8=
+github.com/CorentinB/warc v0.8.69/go.mod h1:A9Ds2kT59j2Bzbe5pDZ925XmVODwq9fAlmSSS45SRlk=
 github.com/ImVexed/fasturl v0.0.0-20230304231329-4e41488060f3 h1:ClzzXMDDuUbWfNNZqGeYq4PnYOlwlOVIvSyNaIy0ykg=
 github.com/ImVexed/fasturl v0.0.0-20230304231329-4e41488060f3/go.mod h1:we0YA5CsBbH5+/NUzC/AlMmxaDtWlXeNsqrwXjTzmzA=
 github.com/PuerkitoBio/goquery v1.10.1 h1:Y8JGYUkXWTGRB6Ars3+j3kN0xg1YqqlwvdTV8WTFQcU=

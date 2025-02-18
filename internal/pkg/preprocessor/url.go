@@ -4,18 +4,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ada-url/goada"
 	"github.com/internetarchive/Zeno/pkg/models"
 )
 
-// Normalize the URL by removing fragments, attempting to add URL scheme if missing,
-// and converting relative URLs into absolute URLs. An error is returned if the URL
-// cannot be normalized.
+// NormalizeURL removes fragments, ensures a valid scheme, resolves relative paths
+// against a parent, and returns an error if the URL cannot be normalized.
 func NormalizeURL(URL *models.URL, parentURL *models.URL) (err error) {
 	// Clean the URL by removing leading and trailing quotes
 	URL.Raw = strings.Trim(URL.Raw, `"'`)
-
-	var adaParse *goada.Url
 
 	parsedURL, err := url.Parse(URL.Raw)
 	if err != nil {
@@ -28,35 +24,49 @@ func NormalizeURL(URL *models.URL, parentURL *models.URL) (err error) {
 		// - if the URL starts with a slash, use the parent URL's scheme and host
 		// - if the URL does not start with a slash, use the parent URL's scheme, host, and path
 		baseURL := parentURL.GetParsed()
+
 		if strings.HasPrefix(parsedURL.Path, "/") {
-			adaParse, err = goada.NewWithBase(URL.Raw, baseURL.Scheme+"://"+baseURL.Host)
-			if err != nil {
-				return err
+			// Just scheme + host
+			b, errParse := url.Parse(baseURL.Scheme + "://" + baseURL.Host)
+			if errParse != nil {
+				return errParse
 			}
+
+			// Resolve relative URL against this new base
+			parsedURL = b.ResolveReference(parsedURL)
 		} else {
-			adaParse, err = goada.NewWithBase(URL.Raw, baseURL.String())
-			if err != nil {
-				return err
+			// Use full parent URL
+			b, errParse := url.Parse(baseURL.String())
+			if errParse != nil {
+				return errParse
 			}
+
+			parsedURL = b.ResolveReference(parsedURL)
 		}
 	} else {
+		// If the URL is absolute or there is no parent
 		if parsedURL.Scheme == "" {
 			parsedURL.Scheme = "http"
 		}
 
-		adaParse, err = goada.New(models.URLToString(parsedURL))
+		// This is needed to repopulate the URL fields
+		// after modifying the scheme (e.g. the Host would be empty)
+		parsedURL, err = url.Parse(parsedURL.String())
 		if err != nil {
 			return err
 		}
 	}
 
-	adaParse.SetHash("")
-	if scheme := adaParse.Protocol(); scheme != "http:" && scheme != "https:" {
+	// Remove fragment
+	parsedURL.Fragment = ""
+
+	// Check for supported schemes
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
 		return ErrUnsupportedScheme
 	}
 
 	// Check for localhost and 127.0.0.1
-	host := adaParse.Hostname()
+	host := parsedURL.Hostname()
 	if host == "localhost" || host == "127.0.0.1" {
 		return ErrUnsupportedHost
 	}
@@ -66,8 +76,8 @@ func NormalizeURL(URL *models.URL, parentURL *models.URL) (err error) {
 		return ErrUnsupportedHost
 	}
 
-	URL.Raw = adaParse.Href()
-	adaParse.Free()
+	// Final URL string
+	URL.Raw = parsedURL.String()
 
 	return URL.Parse()
 }

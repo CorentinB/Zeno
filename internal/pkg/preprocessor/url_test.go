@@ -36,7 +36,7 @@ func TestNormalizeURL(t *testing.T) {
 			name:        "valid URL without scheme",
 			rawURL:      "www.google.com",
 			wantErr:     false,
-			expectedURL: "http://www.google.com/",
+			expectedURL: "http://www.google.com",
 		},
 		{
 			name:    "FTP url",
